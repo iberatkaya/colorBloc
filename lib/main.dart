@@ -31,12 +31,38 @@ class MyHomePage extends StatefulWidget {
   _MyHomePageState createState() => _MyHomePageState();
 }
 
-class _MyHomePageState extends State<MyHomePage> {
+class _MyHomePageState extends State<MyHomePage> with TickerProviderStateMixin {
   TextEditingController rCont = TextEditingController();
   TextEditingController gCont = TextEditingController();
   TextEditingController bCont = TextEditingController();
-  int space = 3;
+  double space = 3;
+  bool animate = false;
   GlobalKey<FormState> _key = GlobalKey();
+  Animation<double> animation;
+  AnimationController animationController;
+
+  @override
+  initState() {
+    super.initState();
+    animationController = AnimationController(
+      vsync: this,
+      duration: Duration(seconds: 1),
+    );
+    Tween<double> tween = Tween(begin: 3, end: 12);
+    animation = tween.animate(animationController)
+      ..addListener(() {
+        setState(() {});
+      })
+      ..addStatusListener(
+        (status) {
+          if (status == AnimationStatus.completed) {
+            animationController.reverse();
+          } else if (status == AnimationStatus.dismissed) {
+            animationController.forward();
+          }
+        },
+      );
+  }
 
   ///Convert R, G, B strings into a Color
   ///Default value if a string parsing fails is 0
@@ -75,20 +101,20 @@ class _MyHomePageState extends State<MyHomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Spacer(flex: 1),
+              Spacer(flex: 2),
               Expanded(
-                flex: 5,
+                flex: 10,
                 child: BlocBuilder<ColorCubit, List<Color>>(builder: (blockContext, colors) {
                   return CustomPaint(
                     painter: MyPaint(
                       colors: colors,
-                      space: space,
+                      space: animate ? animation.value : space,
                     ),
                   );
                 }),
               ),
               Expanded(
-                flex: 3,
+                flex: 6,
                 child: Form(
                   key: _key,
                   child: Row(
@@ -147,7 +173,27 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               Expanded(
-                flex: 1,
+                flex: 2,
+                child: FlatButton(
+                  color: Colors.blue,
+                  onPressed: () {
+                    if (!animate)
+                      animationController.forward();
+                    else
+                      animationController.reset();
+                    setState(() => animate = !animate);
+                  },
+                  child: Text(
+                    "Animate",
+                    style: TextStyle(
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+              ),
+              Spacer(flex: 1),
+              Expanded(
+                flex: 2,
                 child: BlocBuilder<ColorCubit, List<Color>>(
                   builder: (blockContext, colors) {
                     return FlatButton(
@@ -159,11 +205,12 @@ class _MyHomePageState extends State<MyHomePage> {
                         child: Text(
                           "Add Color",
                           style: TextStyle(
-                              color: averageValueFromColor(
-                                          rgbStringToColor(rCont.text, gCont.text, bCont.text)) <
-                                      127
-                                  ? Colors.white
-                                  : Colors.black),
+                            color:
+                                averageValueFromColor(rgbStringToColor(rCont.text, gCont.text, bCont.text)) <
+                                        127
+                                    ? Colors.white
+                                    : Colors.black,
+                          ),
                         ),
                         color: rgbStringToColor(rCont.text, gCont.text, bCont.text));
                   },
@@ -171,7 +218,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               Spacer(flex: 1),
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: BlocBuilder<ColorCubit, List<Color>>(
                   builder: (blocContext, colors) {
                     return Container(
@@ -200,7 +247,7 @@ class _MyHomePageState extends State<MyHomePage> {
               ),
               Spacer(flex: 1),
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: BlocBuilder<ColorCubit, List<Color>>(
                   builder: (blocContext, colors) {
                     return Row(
@@ -223,12 +270,12 @@ class _MyHomePageState extends State<MyHomePage> {
                 ),
               ),
               Expanded(
-                flex: 1,
+                flex: 2,
                 child: Slider(
                   value: space.toDouble(),
                   min: 1,
                   max: 25,
-                  onChanged: (val) => setState(() => space = val.toInt()),
+                  onChanged: (val) => setState(() => space = val),
                 ),
               ),
               Spacer(flex: 1),
